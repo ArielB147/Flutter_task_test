@@ -1,99 +1,151 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class AddTaskPage extends StatelessWidget{
-  const AddTaskPage ({super.key});
+class AddTaskPage extends StatelessWidget {
+  const AddTaskPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController controller = TextEditingController();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Task', 
-        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 50, left: 16, right: 16),
+        child: BlocProvider(
+          create: (context) => MyAppCubit(),
+          child: BlocBuilder<MyAppCubit, TaskState>(
+            builder: (context, state) {
+              return Column(
+                children: [
+                  const ListTile(
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Tuesday, 9th',
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 69, 188, 235),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  
+                    subtitle: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'February',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Color.fromARGB(255, 124, 122, 122),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: controller,
+                          onChanged: (value) =>
+                              context.read<MyAppCubit>().setName(value),
+                          decoration: InputDecoration(
+                            hintText: 'Agregar tarea...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        onPressed: () {
+                          context.read<MyAppCubit>().addName();
+                          controller.clear();
+                        },
+                        icon: const Icon(Icons.add, color: Colors.blue),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                   Expanded(
+                    child: ListView.builder(
+                      itemCount: state.task.length,
+                      itemBuilder: (context, index) {
+                        return CheckboxListTile(
+                          title: Text(
+                            state.task[index].name,
+                            style: TextStyle(
+                              fontSize: 20,
+                              decoration: state.task[index].isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                          value: state.task[index].isCompleted,
+                          onChanged: (value) {
+                            context.read<MyAppCubit>().toggleTask(index);
+                          },
+                          activeColor: Colors.blue,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.teal,
-      ),
-
-      body: Column(
-        children:[
-
-          const ListTile(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Tuesday, 9th', style: TextStyle(
-                  color: Color.fromARGB(255, 69, 188, 235),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 25,
-                ),),
-
-                Text('4 task', style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w300,
-                  fontSize: 18,
-                ),),
-              ],
-            ),
-
-            subtitle: Text('February', style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color.fromARGB(255, 124, 122, 122)
-            ),),
-          ),
-
-          ListTile(
-            leading: Checkbox(value: true, onChanged: (value){}, activeColor: const Color.fromARGB(255, 233, 115, 140),),
-            title: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Moring Run', style: TextStyle(decoration: TextDecoration.lineThrough),),
-                Text('6:00 AM')
-              ],
-            ),
-            
-          ),
-
-          ListTile(
-            leading: Checkbox(value: true, onChanged: (value){}, activeColor: const Color.fromARGB(255, 233, 115, 140),),
-            title: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Office', style: TextStyle(decoration: TextDecoration.lineThrough),),
-                Text('10:00 AM')
-              ],
-            ),
-            
-          ),
-
-          ListTile(
-            leading: Checkbox(value: false, onChanged: (value){}, activeColor: const Color.fromARGB(255, 233, 115, 140),),
-            title: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Meeting'),
-                Text('12:00 PM')
-              ],
-            ),
-            
-          ),
-
-          ListTile(
-            leading: Checkbox(value: false, onChanged: (value){}, activeColor: const Color.fromARGB(255, 233, 115, 140),),
-            title: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Lunch'),
-                Text('03:00 PM')
-              ],
-            ),
-            
-          ),
-        ],
       ),
     );
   }
 }
+
+
+class Task {
+  final String name;
+  final bool isCompleted;
+
+  Task({required this.name, this.isCompleted = false});
+}
+
+class TaskState {
+  final String? currentTask;
+  final List<Task> task;
+
+  TaskState({this.currentTask = '', required this.task});
+}
+
+class MyAppCubit extends Cubit<TaskState> {
+  MyAppCubit() : super(TaskState(task: []));
+
+  void setName(String name) {
+    emit(TaskState(task: state.task, currentTask: name));
+  }
+
+  void addName() {
+    if (state.currentTask?.isEmpty ?? true) return;
+    final newTask = Task(name: state.currentTask!);
+    emit(TaskState(task: [...state.task, newTask]));
+  }
+
+  void toggleTask(int index) {
+    final updatedTasks = List<Task>.from(state.task);
+    updatedTasks[index] = Task(
+      name: updatedTasks[index].name,
+      isCompleted: !updatedTasks[index].isCompleted,
+    );
+    emit(TaskState(task: updatedTasks));
+  }
+}
+
+
 
 /*class Persona{
   String nombre;
