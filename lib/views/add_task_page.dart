@@ -12,8 +12,9 @@ class AddTaskPage extends StatelessWidget {
         padding: const EdgeInsets.only(top: 50, left: 16, right: 16),
         child: BlocProvider(
           create: (context) => MyAppCubit(),
-          child: BlocBuilder<MyAppCubit, TaskState>(
-            builder: (context, state) {
+          child: BlocSelector<MyAppCubit, TaskState, List<Task>>(
+            selector: (state) => state.task,
+            builder: (context, taskList) {
               return Column(
                 children: [
                   const ListTile(
@@ -76,19 +77,19 @@ class AddTaskPage extends StatelessWidget {
                   const SizedBox(height: 10),
                    Expanded(
                     child: ListView.builder(
-                      itemCount: state.task.length,
+                      itemCount: taskList.length,
                       itemBuilder: (context, index) {
                         return CheckboxListTile(
                           title: Text(
-                            state.task[index].name,
+                            taskList[index].name,
                             style: TextStyle(
                               fontSize: 20,
-                              decoration: state.task[index].isCompleted
+                              decoration: taskList[index].isCompleted
                                   ? TextDecoration.lineThrough
                                   : null,
                             ),
                           ),
-                          value: state.task[index].isCompleted,
+                          value: taskList[index].isCompleted,
                           onChanged: (value) {
                             context.read<MyAppCubit>().toggleTask(index);
                           },
